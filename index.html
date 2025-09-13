@@ -52,7 +52,7 @@
         }
         .metric-card { text-align: center; transition: transform 0.3s ease; }
         .metric-card:hover { transform: translateY(-5px); }
-        .metric-value { font-size: 2.5em; font-weight: bold; margin: 10px 0; }
+        .metric-value { font-size: 2.5em; font-weight: bold; margin: 10px 0; color: var(--secondary);}
         .metric-unit { font-size: 0.9em; color: #666; }
         .chart-container { height: 300px; margin-top: 15px; }
         .status-badge {
@@ -95,15 +95,16 @@
             border-radius: 5px;
             backdrop-filter: blur(5px);
         }
-        @media (max-width: 768px) {
+        .card h3 { color: var(--primary); font-weight: 700; margin-bottom: 10px;}
+        .card h3 span { font-size: 1.2em; }
+        .alert-history-title { color: var(--primary); font-weight: 700; margin-bottom: 8px;}
+        #alert-history { font-size: 0.98em; }
+        #alert-history .alert-entry { margin-bottom: 8px; }
+        #alert-history .alert-entry .alert-msg { color: var(--danger); font-weight: 600;}
+        #alert-history .alert-entry .alert-time { color: #666; margin-left: 8px;}
+        @media (max-width: 900px) {
             .dashboard { grid-template-columns: 1fr; }
-            .developer-credit {
-                position: relative;
-                text-align: center;
-                margin-top: 20px;
-                bottom: 0;
-                right: 0;
-            }
+            .developer-credit { position: relative; text-align: center; margin-top: 24px; bottom: 0; right: 0;}
         }
     </style>
 </head>
@@ -117,43 +118,61 @@
         <div id="alert-container" aria-live="assertive"></div>
 
         <div class="card" style="margin:20px 0;">
-            <h3>🕒 Past Alert History</h3>
+            <div class="alert-history-title">🕒 Past Alert History</div>
             <div id="alert-history" style="max-height:180px;overflow-y:auto;"></div>
         </div>
 
         <div class="dashboard" role="main">
-            <!-- Solar Panel Metrics -->
             <div class="card metric-card" aria-label="Solar Generation">
-                <h3>☀️ Solar Generation</h3>
+                <h3><span>☀️</span> Solar Generation</h3>
                 <div class="metric-value" id="solar-power">0.0<span class="metric-unit">W</span></div>
                 <div>Voltage: <span id="solar-voltage">0.0</span>V</div>
                 <div>Current: <span id="solar-current">0.0</span>A</div>
                 <div class="chart-container" id="solar-chart" aria-label="Solar Power Chart"></div>
             </div>
-            <!-- Battery Metrics -->
             <div class="card metric-card" aria-label="Battery Status">
-                <h3>🔋 Battery Status</h3>
+                <h3><span>🔋</span> Battery Status</h3>
                 <div class="metric-value" id="battery-soc">0<span class="metric-unit">%</span></div>
                 <div>Voltage: <span id="battery-voltage">0.0</span>V</div>
                 <div>Current: <span id="battery-current">0.0</span>A</div>
                 <div>Temp: <span id="battery-temp">0.0</span>°C</div>
                 <div class="chart-container" id="battery-chart" aria-label="Battery SOC Chart"></div>
             </div>
-            <!-- System Health -->
             <div class="card metric-card" aria-label="System Health">
-                <h3>📊 System Health</h3>
+                <h3><span>📊</span> System Health</h3>
                 <div>Efficiency: <span id="system-efficiency">0.0</span>%</div>
                 <div>Today's Energy: <span id="daily-energy">0.0</span>kWh</div>
                 <div>Status: <span class="status-badge status-normal" id="system-status">NORMAL</span></div>
                 <div class="chart-container" id="efficiency-chart" aria-label="Efficiency Chart"></div>
             </div>
-            <!-- Environmental Data -->
             <div class="card metric-card" aria-label="Environmental">
-                <h3>🌡️ Environmental</h3>
+                <h3><span>🌡️</span> Environmental</h3>
                 <div>Temperature: <span id="ambient-temp">0.0</span>°C</div>
                 <div>Light Intensity: <span id="light-intensity">0</span>LUX</div>
                 <div>Last Updated: <span id="last-update">Never</span></div>
                 <div class="chart-container" id="temp-chart" aria-label="Temperature Chart"></div>
+            </div>
+        </div>
+
+        <div class="card" style="margin:20px 0;">
+            <h3>📈 History: Last 48 Hours</h3>
+            <div class="dashboard" style="margin-bottom:0;">
+                <div class="card" style="padding:12px;">
+                    <h4 style="color:var(--secondary);">Solar Generation</h4>
+                    <div class="chart-container" id="solar-history-chart"></div>
+                </div>
+                <div class="card" style="padding:12px;">
+                    <h4 style="color:var(--success);">Battery Status</h4>
+                    <div class="chart-container" id="battery-history-chart"></div>
+                </div>
+                <div class="card" style="padding:12px;">
+                    <h4 style="color:var(--warning);">System Health</h4>
+                    <div class="chart-container" id="efficiency-history-chart"></div>
+                </div>
+                <div class="card" style="padding:12px;">
+                    <h4 style="color:var(--danger);">Environmental</h4>
+                    <div class="chart-container" id="temp-history-chart"></div>
+                </div>
             </div>
         </div>
 
