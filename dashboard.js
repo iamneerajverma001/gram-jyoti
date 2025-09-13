@@ -1,10 +1,10 @@
-// dashboard.js - Enhanced GramJYOTI Microgrid Dashboard with Alert History
 class GramJYOTIDashboard {
     constructor() {
         this.channelId = '3072359';
         this.readAPIKey = '5U4LUIC6VHGRKS2B';
         this.updateInterval = 15000;
         this.charts = {};
+        this.historyCharts = {};
         this.historicalData = [];
         this.maxDataPoints = 100;
         this.alertHistory = this.loadAlertHistory();
@@ -13,6 +13,7 @@ class GramJYOTIDashboard {
         this.loadHistoricalData();
         this.startDataPolling();
         this.renderAlertHistory();
+        this.fetchHistoryData();
     }
 
     initCharts() {
@@ -20,6 +21,11 @@ class GramJYOTIDashboard {
         this.charts.battery = echarts.init(document.getElementById('battery-chart'));
         this.charts.efficiency = echarts.init(document.getElementById('efficiency-chart'));
         this.charts.temperature = echarts.init(document.getElementById('temp-chart'));
+
+        this.historyCharts.solar = echarts.init(document.getElementById('solar-history-chart'));
+        this.historyCharts.battery = echarts.init(document.getElementById('battery-history-chart'));
+        this.historyCharts.efficiency = echarts.init(document.getElementById('efficiency-history-chart'));
+        this.historyCharts.temperature = echarts.init(document.getElementById('temp-history-chart'));
 
         const commonChartOption = {
             grid: { top: 10, right: 10, bottom: 20, left: 40 },
@@ -31,30 +37,45 @@ class GramJYOTIDashboard {
 
         this.charts.solar.setOption({
             ...commonChartOption,
-            title: { text: 'Power Trend', left: 'center', textStyle: { fontSize: 14, color: '#3498db' } },
+            title: { text: 'Power Trend', left: 'center', textStyle: { fontSize: 15, color: '#3498db' } },
             series: [{ data: [], name: 'Solar Power', color: '#3498db' }]
         });
 
         this.charts.battery.setOption({
             ...commonChartOption,
-            title: { text: 'SOC Trend', left: 'center', textStyle: { fontSize: 14, color: '#27ae60' } },
+            title: { text: 'SOC Trend', left: 'center', textStyle: { fontSize: 15, color: '#27ae60' } },
             series: [{ data: [], name: 'State of Charge', color: '#27ae60' }]
         });
 
         this.charts.efficiency.setOption({
             ...commonChartOption,
-            title: { text: 'Efficiency', left: 'center', textStyle: { fontSize: 14, color: '#f39c12' } },
+            title: { text: 'Efficiency', left: 'center', textStyle: { fontSize: 15, color: '#f39c12' } },
             series: [{ data: [], name: 'Efficiency %', color: '#f39c12' }]
         });
 
         this.charts.temperature.setOption({
             ...commonChartOption,
-            title: { text: 'Temperature', left: 'center', textStyle: { fontSize: 14, color: '#e74c3c' } },
+            title: { text: 'Temperature', left: 'center', textStyle: { fontSize: 15, color: '#e74c3c' } },
             series: [{ data: [], name: 'Battery Temp', color: '#e74c3c' }]
         });
 
+        // History charts
+        const historyOption = {
+            grid: { top: 10, right: 10, bottom: 20, left: 40 },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'time', axisLabel: { color: '#2c3e50' } },
+            yAxis: { type: 'value', axisLabel: { color: '#2c3e50' } },
+            series: [{ type: 'line', showSymbol: false, smooth: true, lineStyle: { width: 2 } }]
+        };
+
+        this.historyCharts.solar.setOption({ ...historyOption, title: { text: 'Solar Power (W)', left: 'center', textStyle: { fontSize: 13, color: '#3498db' } }, series: [{ data: [], name: 'Solar Power', color: '#3498db' }] });
+        this.historyCharts.battery.setOption({ ...historyOption, title: { text: 'Battery SOC (%)', left: 'center', textStyle: { fontSize: 13, color: '#27ae60' } }, series: [{ data: [], name: 'SOC', color: '#27ae60' }] });
+        this.historyCharts.efficiency.setOption({ ...historyOption, title: { text: 'Efficiency (%)', left: 'center', textStyle: { fontSize: 13, color: '#f39c12' } }, series: [{ data: [], name: 'Efficiency', color: '#f39c12' }] });
+        this.historyCharts.temperature.setOption({ ...historyOption, title: { text: 'Battery Temp (°C)', left: 'center', textStyle: { fontSize: 13, color: '#e74c3c' } }, series: [{ data: [], name: 'Battery Temp', color: '#e74c3c' }] });
+
         window.addEventListener('resize', () => {
             Object.values(this.charts).forEach(chart => chart.resize());
+            Object.values(this.historyCharts).forEach(chart => chart.resize());
         });
     }
 
@@ -72,6 +93,40 @@ class GramJYOTIDashboard {
             this.showError('Failed to fetch data. Using offline cache.');
             return this.getCachedData();
         }
+    }
+
+    async fetchHistoryData() {
+        try {
+            const url = `https://api.thingspeak.com/channels/${this.channelId}/feeds.json?api_key=${this.readAPIKey}&results=2880`; // 48 hours at 1 min interval
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Network response was not ok');
+            const data = await response.json();
+            this.renderHistoryCharts(data.feeds || []);
+        } catch (error) {
+            this.renderHistoryCharts([]);
+        }
+    }
+
+    renderHistoryCharts(feeds) {
+        // Solar Power
+        const solarData = feeds.map(f => [new Date(f.created_at).getTime(), parseFloat(f.field7) || 0]);
+        this.historyCharts.solar.setOption({ series: [{ data: solarData }] });
+
+        // Battery SOC
+        const socData = feeds.map(f => [new Date(f.created_at).getTime(), parseFloat(f.field6) || 0]);
+        this.historyCharts.battery.setOption({ series: [{ data: socData }] });
+
+        // Efficiency
+        const effData = feeds.map(f => {
+            const solar = parseFloat(f.field7) || 0;
+            const load = parseFloat(f.field8) || 0;
+            return [new Date(f.created_at).getTime(), solar > 0 ? (load / solar) * 100 : 0];
+        });
+        this.historyCharts.efficiency.setOption({ series: [{ data: effData }] });
+
+        // Battery Temp
+        const tempData = feeds.map(f => [new Date(f.created_at).getTime(), parseFloat(f.field5) || 0]);
+        this.historyCharts.temperature.setOption({ series: [{ data: tempData }] });
     }
 
     processData(data) {
@@ -178,16 +233,16 @@ class GramJYOTIDashboard {
         const container = document.getElementById('alert-history');
         if (!container) return;
         if (this.alertHistory.length === 0) {
-            container.innerHTML = '<div style="color:#888;">No past alerts.</div>';
+            container.innerHTML = '<div style="color:#666;">No past alerts.</div>';
             return;
         }
         container.innerHTML = this.alertHistory.slice().reverse().map(a =>
-            `<div style="margin-bottom:8px;font-size:0.95em;"><span style="color:#e74c3c;font-weight:bold;">${a.message}</span> <span style="color:#555;">(${new Date(a.time).toLocaleString()})</span></div>`
+            `<div class="alert-entry"><span class="alert-msg">${a.message}</span><span class="alert-time">(${new Date(a.time).toLocaleString()})</span></div>`
         ).join('');
     }
 
     playAlertSound() {
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDci0FLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGnN/0xIIwChhVrefusF0WED2Q2fTDfzMMHEyo5O2zYxwNQJfd88N9MQsgUqzo7bNlHA1Al93zw30xCyBSrOjts2UcDUCX3fPDfTELIFKs6O2zZRwNQJfd88N9MQsgUqzo7bNlHA1Al93zw30xCyBSrOjts2UcDUCX3fPDfTELIFKs6O2zZRwNQJfd88N9MQsgUqzo7bNlHA1Al93zw30xCyBSrOjts2UcDUCX3fPDfTELIFKs6O2zZRwNQJfd88N9MQsgUqzo7bNlHA1Al93zw30xCyBSrOjts2UcDUCX3fPDfTELIFKs6O2zZRwNQJfd88N9MQsgUqzo7bN2zA=');
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDci0FLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGnN/0xIIwChhVrefusF0WED2Q2fTDfzMMHEyo5O2zYxwNQJfd88N9MQsgUqzo7bNlHA1Al93zw30xCyBSrOjts2UcDUCX3fPDfTELIFKs6O2zZRwNQJfd88N9MQsgUqzo7bNlHA1Al93zw30xCyBSrOjts2UcDUCX3fPDfTELIFKs6O2zZRwNQJfd88N9MQsgUqzo7bN2zA=');
         audio.play().catch(e => {});
     }
 
@@ -243,7 +298,7 @@ class GramJYOTIDashboard {
     showLoading(isLoading) {
         const alertContainer = document.getElementById('alert-container');
         if (isLoading) {
-            alertContainer.innerHTML = `<div class="alert-box" style="background: #3498db;" role="status">Loading data...</div>`;
+            alertContainer.innerHTML = `<div class="alert-box" style="background: var(--secondary);" role="status">Loading data...</div>`;
         } else if (alertContainer.innerHTML.includes('Loading data...')) {
             alertContainer.innerHTML = '';
         }
