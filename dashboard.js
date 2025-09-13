@@ -1,9 +1,9 @@
 // dashboard.js - Complete Offline Dashboard
 class GramJYOTIDashboard {
     constructor() {
-        this.channelId = '3066084'; // Replace with your ThingSpeak channel ID
-        this.readAPIKey = 'IFTAP88VRPUR0CKY'; // Replace with your read API key
-        this.updateInterval = 30000; // 30 seconds
+        this.channelId = '3072359'; // Replace with your ThingSpeak channel ID
+        this.readAPIKey = '5U4LUIC6VHGRKS2B'; // Replace with your read API key
+        this.updateInterval = 15000; // 30 seconds
         this.charts = {};
         this.historicalData = [];
         this.maxDataPoints = 100;
@@ -259,4 +259,5 @@ class GramJYOTIDashboard {
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', () => {
     new GramJYOTIDashboard();
+
 });
