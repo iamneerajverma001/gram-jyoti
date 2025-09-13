@@ -15,13 +15,7 @@
             --light: #ecf0f1;
             --dark: #2c3e50;
         }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -29,13 +23,11 @@
             padding: 20px;
             position: relative;
         }
-        
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding-bottom: 40px; /* Add padding to prevent overlap with developer credit */
+            padding-bottom: 40px;
         }
-        
         .header {
             text-align: center;
             color: white;
@@ -45,14 +37,12 @@
             border-radius: 15px;
             backdrop-filter: blur(10px);
         }
-        
         .dashboard {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             margin-bottom: 20px;
         }
-        
         .card {
             background: rgba(255, 255, 255, 0.95);
             padding: 20px;
@@ -60,32 +50,11 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             backdrop-filter: blur(10px);
         }
-        
-        .metric-card {
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-        
-        .metric-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .metric-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-        
-        .metric-unit {
-            font-size: 0.9em;
-            color: #666;
-        }
-        
-        .chart-container {
-            height: 300px;
-            margin-top: 15px;
-        }
-        
+        .metric-card { text-align: center; transition: transform 0.3s ease; }
+        .metric-card:hover { transform: translateY(-5px); }
+        .metric-value { font-size: 2.5em; font-weight: bold; margin: 10px 0; }
+        .metric-unit { font-size: 0.9em; color: #666; }
+        .chart-container { height: 300px; margin-top: 15px; }
         .status-badge {
             display: inline-block;
             padding: 5px 15px;
@@ -93,11 +62,9 @@
             font-size: 0.9em;
             font-weight: bold;
         }
-        
         .status-normal { background: var(--success); color: white; }
         .status-warning { background: var(--warning); color: white; }
         .status-danger { background: var(--danger); color: white; }
-        
         .alert-box {
             background: var(--danger);
             color: white;
@@ -106,20 +73,17 @@
             margin: 10px 0;
             animation: pulse 2s infinite;
         }
-        
         @keyframes pulse {
             0% { opacity: 1; }
             50% { opacity: 0.7; }
             100% { opacity: 1; }
         }
-        
         .last-updated {
             text-align: center;
             color: white;
             font-size: 0.9em;
             margin-top: 20px;
         }
-        
         .developer-credit {
             position: fixed;
             bottom: 15px;
@@ -131,12 +95,8 @@
             border-radius: 5px;
             backdrop-filter: blur(5px);
         }
-        
         @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-            
+            .dashboard { grid-template-columns: 1fr; }
             .developer-credit {
                 position: relative;
                 text-align: center;
@@ -148,59 +108,61 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="container" aria-label="Microgrid Dashboard">
+        <div class="header" role="banner">
             <h1>🌞 GramJYOTI Microgrid Dashboard</h1>
             <p>Real-time monitoring for rural microgrids</p>
         </div>
 
-        <div id="alert-container"></div>
+        <div id="alert-container" aria-live="assertive"></div>
 
-        <div class="dashboard">
+        <div class="card" style="margin:20px 0;">
+            <h3>🕒 Past Alert History</h3>
+            <div id="alert-history" style="max-height:180px;overflow-y:auto;"></div>
+        </div>
+
+        <div class="dashboard" role="main">
             <!-- Solar Panel Metrics -->
-            <div class="card metric-card">
+            <div class="card metric-card" aria-label="Solar Generation">
                 <h3>☀️ Solar Generation</h3>
                 <div class="metric-value" id="solar-power">0.0<span class="metric-unit">W</span></div>
                 <div>Voltage: <span id="solar-voltage">0.0</span>V</div>
                 <div>Current: <span id="solar-current">0.0</span>A</div>
-                <div class="chart-container" id="solar-chart"></div>
+                <div class="chart-container" id="solar-chart" aria-label="Solar Power Chart"></div>
             </div>
-
             <!-- Battery Metrics -->
-            <div class="card metric-card">
+            <div class="card metric-card" aria-label="Battery Status">
                 <h3>🔋 Battery Status</h3>
                 <div class="metric-value" id="battery-soc">0<span class="metric-unit">%</span></div>
                 <div>Voltage: <span id="battery-voltage">0.0</span>V</div>
                 <div>Current: <span id="battery-current">0.0</span>A</div>
                 <div>Temp: <span id="battery-temp">0.0</span>°C</div>
-                <div class="chart-container" id="battery-chart"></div>
+                <div class="chart-container" id="battery-chart" aria-label="Battery SOC Chart"></div>
             </div>
-
             <!-- System Health -->
-            <div class="card metric-card">
+            <div class="card metric-card" aria-label="System Health">
                 <h3>📊 System Health</h3>
                 <div>Efficiency: <span id="system-efficiency">0.0</span>%</div>
                 <div>Today's Energy: <span id="daily-energy">0.0</span>kWh</div>
                 <div>Status: <span class="status-badge status-normal" id="system-status">NORMAL</span></div>
-                <div class="chart-container" id="efficiency-chart"></div>
+                <div class="chart-container" id="efficiency-chart" aria-label="Efficiency Chart"></div>
             </div>
-
             <!-- Environmental Data -->
-            <div class="card metric-card">
+            <div class="card metric-card" aria-label="Environmental">
                 <h3>🌡️ Environmental</h3>
                 <div>Temperature: <span id="ambient-temp">0.0</span>°C</div>
                 <div>Light Intensity: <span id="light-intensity">0</span>LUX</div>
                 <div>Last Updated: <span id="last-update">Never</span></div>
-                <div class="chart-container" id="temp-chart"></div>
+                <div class="chart-container" id="temp-chart" aria-label="Temperature Chart"></div>
             </div>
         </div>
 
-        <div class="last-updated">
+        <div class="last-updated" aria-label="Update Info">
             Data updates every 30 seconds • GramJYOTI 2.0
         </div>
     </div>
 
-    <div class="developer-credit">
+    <div class="developer-credit" aria-label="Developer Credit">
         Developed by Neeraj Verma
     </div>
 
